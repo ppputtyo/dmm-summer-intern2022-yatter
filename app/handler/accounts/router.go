@@ -20,6 +20,7 @@ func NewRouter(app *app.App) http.Handler {
 	h := &handler{app: app}
 	// v1/accounts/
 	r.Post("/", h.Create)
+	r.Get("/{usename}", h.Get)
 
 	return r
 }
