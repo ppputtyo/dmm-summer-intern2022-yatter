@@ -1,6 +1,8 @@
 package object
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/jmoiron/sqlx"
+)
 
 type (
 	// Implementation for repository.Account
@@ -15,10 +17,10 @@ type (
 	// Account account
 	Status struct {
 		// The internal ID of the account
-		ID StatusID `json:"-"`
+		ID StatusID `json:"id"`
 
 		// The username of the account
-		AccountID string `json:"account_id,omitempty"`
+		AccountID AccountID `json:"account_id,omitempty"`
 
 		// The username of the account
 		Content string `json:"content" db:"content"`
