@@ -17,7 +17,7 @@ type (
 	// Account account
 	Status struct {
 		// The internal ID of the account
-		ID StatusID `json:"id"`
+		ID StatusID `json:"id" db:"id"`
 
 		// The username of the account
 		AccountID AccountID `json:"account_id,omitempty"`
