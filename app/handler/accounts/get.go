@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"yatter-backend-go/app/handler/httperror"
+
+	"github.com/go-chi/chi"
 )
 
 func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Path[len("/v1/accounts/"):]
+	username := chi.URLParam(r, "username")
+
 	fmt.Println(username)
 	a := h.app.Dao.Account()
 
