@@ -19,20 +19,30 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	// ctx := r.Context()
 
 	var req AddRequest
+
+	// json受け取る
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httperror.BadRequest(w, err)
 		return
 	}
 
+	// Accountの構造体
 	account := new(object.Account)
+	// usernameを代入
 	account.Username = req.Username
+
+	// passwordを代入
 	if err := account.SetPassword(req.Password); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	_ = h.app.Dao.Account() // domain/repository の取得
-	panic("Must Implement Account Registration")
+	// dbを持つaccount構造体を返す
+	a := h.app.Dao.Account() // domain/repository の取得
+	err := a.CreateNewAccount(r.Context(), *account)
+	if err != nil {
+		panic("Must Implement Account Registration")
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(account); err != nil {
