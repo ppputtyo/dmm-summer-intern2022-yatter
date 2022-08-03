@@ -32,8 +32,8 @@ func debugPostTable(ctx context.Context, s *status) {
 	}
 }
 
-func (s *status) PostStatus(ctx context.Context, entity object.Status) error {
-	_, err := s.db.ExecContext(
+func (s *status) PostStatus(ctx context.Context, entity *object.Status) error {
+	res, err := s.db.ExecContext(
 		ctx,
 		"INSERT INTO STATUS (account_id, content) VALUES (?, ?)",
 		entity.AccountID, entity.Content,
@@ -43,7 +43,8 @@ func (s *status) PostStatus(ctx context.Context, entity object.Status) error {
 		return err
 	}
 
-	debugPostTable(ctx, s)
+	entity.ID, _ = res.LastInsertId()
+	// debugPostTable(ctx, s)
 
 	return nil
 }

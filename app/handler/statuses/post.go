@@ -40,7 +40,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 
 	// dbを持つaccount構造体を返す
 	s := h.app.Dao.Status() // domain/repository の取得
-	err := s.PostStatus(r.Context(), *status)
+	err := s.PostStatus(r.Context(), status)
 	if err != nil {
 		panic("Must Implement Account Registration")
 	}
