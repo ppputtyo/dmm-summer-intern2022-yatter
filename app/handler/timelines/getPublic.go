@@ -3,6 +3,7 @@ package timelines
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/httperror"
 )
@@ -18,9 +19,45 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	q := object.Query{}
 
 	q.OnlyMedia = r.URL.Query().Get("only_media")
-	q.MaxID = r.URL.Query().Get("max_id")
-	q.SinceID = r.URL.Query().Get("since_id")
-	q.Limit = r.URL.Query().Get("limit")
+	maxID_str := r.URL.Query().Get("max_id")
+	sinceID_str := r.URL.Query().Get("since_id")
+	limit_str := r.URL.Query().Get("limit")
+
+	if maxID_str == "" {
+		q.MaxID = 1000000
+	} else {
+		res, err := strconv.Atoi(maxID_str)
+		if err != nil {
+			httperror.BadRequest(w, err)
+			return
+		}
+		q.MaxID = res
+	}
+
+	if sinceID_str == "" {
+		q.SinceID = -1
+	} else {
+		res, err := strconv.Atoi(sinceID_str)
+		if err != nil {
+			httperror.BadRequest(w, err)
+			return
+		}
+		q.SinceID = res
+	}
+
+	if limit_str == "" {
+		q.Limit = 40
+	} else {
+		res, err := strconv.Atoi(limit_str)
+		if err != nil {
+			httperror.BadRequest(w, err)
+			return
+		}
+		if res > 80 {
+			res = 80
+		}
+		q.Limit = res
+	}
 
 	s := h.app.Dao.Status()
 
@@ -42,11 +79,12 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 			httperror.InternalServerError(w, err)
 			return
 		}
-		tmp := Res{}
-		tmp.ID = e.ID
-		tmp.Account = account
-		tmp.Content = e.Content
-		tmp.CreateAt = e.CreateAt
+		tmp := Res{
+			ID:       e.ID,
+			Account:  account,
+			Content:  e.Content,
+			CreateAt: e.CreateAt,
+		}
 
 		res = append(res, tmp)
 	}

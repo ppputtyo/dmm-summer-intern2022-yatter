@@ -12,9 +12,9 @@ type (
 
 	Query struct {
 		OnlyMedia string
-		MaxID     string
-		SinceID   string
-		Limit     string
+		MaxID     int
+		SinceID   int
+		Limit     int
 	}
 )
 
