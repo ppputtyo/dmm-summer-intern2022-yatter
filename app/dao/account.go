@@ -128,7 +128,19 @@ func (r *account) Follow(ctx context.Context, myID, targetID int64) error {
 		myID, targetID,
 	)
 
-	debugRelation(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *account) Unfollow(ctx context.Context, myID, targetID int64) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		"DELETE FROM relation WHERE follower_id = ? AND followee_id = ?",
+		myID, targetID,
+	)
 
 	if err != nil {
 		return err

@@ -16,6 +16,8 @@ type Account interface {
 	//フォロー
 	Follow(ctx context.Context, myID, targetID int64) error
 
+	Unfollow(ctx context.Context, myID, targetID int64) error
+
 	GetRelation(ctx context.Context, myID, targetID int64) (*object.Relation, error)
 
 	GetFollowing(ctx context.Context, ID int64, limit int) ([]object.Account, error)
