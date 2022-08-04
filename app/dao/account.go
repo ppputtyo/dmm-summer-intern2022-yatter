@@ -152,14 +152,14 @@ func (r *account) Unfollow(ctx context.Context, myID, targetID int64) error {
 func (r *account) GetFollowing(ctx context.Context, ID int64, limit int) ([]object.Account, error) {
 	res := make([]object.Account, 0)
 
-	rows, err := r.db.QueryContext(ctx, "select * from relation where follower_id = ? LIMIT ?", ID, limit)
+	rows, err := r.db.QueryContext(ctx, "select followee_id from relation where follower_id = ? LIMIT ?", ID, limit)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var follower_id, followee_id int64
-		rows.Scan(&follower_id, &followee_id)
+		var followee_id int64
+		rows.Scan(&followee_id)
 
 		entity, err := r.FindByID(ctx, followee_id)
 		if err != nil {
@@ -178,15 +178,15 @@ func (r *account) GetFollowers(ctx context.Context, ID int64, query object.Follo
 
 	rows, err := r.db.QueryContext(
 		ctx,
-		"select * from relation where followee_id = ? AND follower_id < ? AND follower_id > ? LIMIT ?",
+		"select follower_id from relation where followee_id = ? AND follower_id < ? AND follower_id > ? LIMIT ?",
 		ID, query.MaxID, query.SinceID, query.Limit)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var follower_id, followee_id int64
-		rows.Scan(&follower_id, &followee_id)
+		var follower_id int64
+		rows.Scan(&follower_id)
 
 		entity, err := r.FindByID(ctx, follower_id)
 		if err != nil {
