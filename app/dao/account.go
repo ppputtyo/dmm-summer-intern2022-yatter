@@ -160,3 +160,30 @@ func (r *account) GetFollowing(ctx context.Context, ID int64, limit int) ([]obje
 
 	return res, nil
 }
+
+func (r *account) GetFollowers(ctx context.Context, ID int64, query object.FollowersQuery) ([]object.Account, error) {
+	res := make([]object.Account, 0)
+
+	rows, err := r.db.QueryContext(
+		ctx,
+		"select * from relation where followee_id = ? AND follower_id < ? AND follower_id > ? LIMIT ?",
+		ID, query.MaxID, query.SinceID, query.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var follower_id, followee_id int64
+		rows.Scan(&follower_id, &followee_id)
+
+		entity, err := r.FindByID(ctx, follower_id)
+		if err != nil {
+			continue
+		}
+		res = append(res, *entity)
+	}
+
+	debugRelation(ctx, r)
+
+	return res, nil
+}

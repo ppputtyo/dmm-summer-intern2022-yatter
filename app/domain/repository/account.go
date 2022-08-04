@@ -19,4 +19,6 @@ type Account interface {
 	GetRelation(ctx context.Context, myID, targetID int64) (*object.Relation, error)
 
 	GetFollowing(ctx context.Context, ID int64, limit int) ([]object.Account, error)
+
+	GetFollowers(ctx context.Context, ID int64, query object.FollowersQuery) ([]object.Account, error)
 }

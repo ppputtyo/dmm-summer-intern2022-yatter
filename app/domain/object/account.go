@@ -43,6 +43,12 @@ type (
 		Following  bool      `json:"following"`
 		FollowedBy bool      `json:"followed_by"`
 	}
+
+	FollowersQuery struct {
+		MaxID   int
+		SinceID int
+		Limit   int
+	}
 )
 
 // Check if given password is match to account's password
