@@ -19,12 +19,14 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	statusID_int64, err := strconv.ParseInt(statusID, 10, 64)
 	if err != nil {
 		httperror.BadRequest(w, err)
+		return
 	}
 
 	entity, err := s.FindByID(r.Context(), statusID_int64)
 
 	if err != nil {
 		httperror.BadRequest(w, err)
+		return
 	}
 
 	a := h.app.Dao.Account() // domain/repository の取得
@@ -32,6 +34,7 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		httperror.InternalServerError(w, err)
+		return
 	}
 
 	res := Res{}
@@ -42,5 +45,6 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		httperror.InternalServerError(w, err)
+		return
 	}
 }

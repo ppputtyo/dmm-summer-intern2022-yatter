@@ -21,9 +21,11 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		httperror.InternalServerError(w, err)
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(entity); err != nil {
 		httperror.InternalServerError(w, err)
+		return
 	}
 }

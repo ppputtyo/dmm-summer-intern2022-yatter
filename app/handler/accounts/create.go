@@ -41,12 +41,14 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	a := h.app.Dao.Account() // domain/repository の取得
 	err := a.CreateNewAccount(r.Context(), *account)
 	if err != nil {
-		httperror.InternalServerError(w, err)
+		httperror.BadRequest(w, err)
+		return
 	}
 
 	entity, err := a.FindByUsername(r.Context(), account.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

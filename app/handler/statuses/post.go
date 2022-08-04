@@ -51,13 +51,15 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	err := s.PostStatus(r.Context(), status)
 	if err != nil {
 		httperror.InternalServerError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
 	status, err = s.FindByID(r.Context(), status.ID)
 	if err != nil {
-		panic(err)
+		httperror.InternalServerError(w, err)
+		return
 	}
 
 	res := Res{}
