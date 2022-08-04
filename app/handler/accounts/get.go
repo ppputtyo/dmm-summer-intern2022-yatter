@@ -11,8 +11,8 @@ import (
 
 func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
-
 	fmt.Println(username)
+
 	a := h.app.Dao.Account()
 
 	entity, err := a.FindByUsername(r.Context(), username)

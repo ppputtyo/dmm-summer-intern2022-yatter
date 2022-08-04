@@ -70,3 +70,93 @@ func (r *account) FindByID(ctx context.Context, ID int64) (*object.Account, erro
 
 	return entity, nil
 }
+
+func debugRelation(ctx context.Context, r *account) {
+	rows, _ := r.db.QueryContext(ctx, "SELECT * FROM relation")
+	defer rows.Close()
+
+	for rows.Next() {
+		var follower_id, followee_id int64
+		rows.Scan(&follower_id, &followee_id)
+		res, _ := r.FindByID(ctx, follower_id)
+		follower_name := res.Username
+
+		res, _ = r.FindByID(ctx, followee_id)
+		followee_name := res.Username
+
+		fmt.Printf("%s => %s\n", follower_name, followee_name)
+	}
+}
+
+func (r *account) GetRelation(ctx context.Context, myID, targetID int64) (*object.Relation, error) {
+	relation := new(object.Relation)
+	relation.ID = targetID
+	relation.Following = false
+	relation.FollowedBy = false
+
+	debugRelation(ctx, r)
+
+	rows, err := r.db.QueryContext(ctx, "select * from relation where follower_id = ? AND followee_id = ?", myID, targetID)
+	if err != nil {
+		return nil, err
+	}
+	if rows.Next() {
+		relation.Following = true
+	}
+
+	rows, err = r.db.QueryContext(ctx, "select * from relation where follower_id = ? AND followee_id = ?", targetID, myID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if rows.Next() {
+		relation.FollowedBy = true
+	}
+
+	return relation, nil
+}
+
+func (r *account) Follow(ctx context.Context, myID, targetID int64) error {
+	if myID == targetID {
+		return fmt.Errorf("cannot follow yourself")
+	}
+
+	_, err := r.db.ExecContext(
+		ctx,
+		"INSERT INTO relation (follower_id, followee_id) VALUES (?, ?)",
+		myID, targetID,
+	)
+
+	debugRelation(ctx, r)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *account) GetFollowing(ctx context.Context, ID int64, limit int) ([]object.Account, error) {
+	res := make([]object.Account, 0)
+
+	rows, err := r.db.QueryContext(ctx, "select * from relation where follower_id = ? LIMIT ?", ID, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var follower_id, followee_id int64
+		rows.Scan(&follower_id, &followee_id)
+
+		entity, err := r.FindByID(ctx, followee_id)
+		if err != nil {
+			continue
+		}
+		res = append(res, *entity)
+	}
+
+	debugRelation(ctx, r)
+
+	return res, nil
+}
