@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
@@ -59,4 +60,49 @@ func (s *status) FindByPostID(ctx context.Context, id int64) (*object.Status, er
 	fmt.Println(a.ID, a.AccountID, a.Content)
 
 	return &a, nil
+}
+
+func (s *status) GetPublicTimelines(ctx context.Context, q object.Query) ([]object.Status, error) {
+	sql := "SELECT id, account_id, content FROM STATUS WHERE "
+
+	//sinceIDより大きいIDのみ取得
+	if q.SinceID == "" {
+		q.SinceID = "0"
+	}
+	sql += "id > " + q.SinceID
+
+	//maxIDより小さいIDのみ取得
+	if q.MaxID != "" {
+		sql += " AND id < " + q.MaxID
+	}
+
+	//limitのデフォルト値は40
+	if q.Limit == "" {
+		q.Limit = "40"
+	}
+	//limitの最大値は80
+	if tmp, _ := strconv.Atoi(q.Limit); tmp > 80 {
+		q.Limit = "80"
+	}
+
+	sql += " LIMIT " + q.Limit
+
+	fmt.Println(sql)
+
+	rows, err := s.db.QueryContext(ctx, sql)
+
+	if err != nil {
+		return nil, err
+	}
+
+	a := make([]object.Status, 0)
+
+	for rows.Next() {
+		var tmp object.Status
+		rows.Scan(&tmp.ID, &tmp.AccountID, &tmp.Content)
+		a = append(a, tmp)
+	}
+
+	return a, nil
+
 }

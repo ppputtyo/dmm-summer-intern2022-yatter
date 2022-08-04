@@ -9,6 +9,13 @@ type (
 	object struct {
 		db *sqlx.DB
 	}
+
+	Query struct {
+		OnlyMedia string
+		MaxID     string
+		SinceID   string
+		Limit     string
+	}
 )
 
 type (
