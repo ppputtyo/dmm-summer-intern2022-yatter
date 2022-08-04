@@ -27,7 +27,7 @@ type (
 		ID StatusID `json:"id" db:"id"`
 
 		// The username of the account
-		AccountID AccountID `json:"account_id,omitempty"`
+		AccountID AccountID `json:"account_id,omitempty" db:"account_id"`
 
 		// The username of the account
 		Content string `json:"content" db:"content"`

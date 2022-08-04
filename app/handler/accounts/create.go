@@ -41,11 +41,16 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	a := h.app.Dao.Account() // domain/repository の取得
 	err := a.CreateNewAccount(r.Context(), *account)
 	if err != nil {
-		panic("Must Implement Account Registration")
+		httperror.InternalServerError(w, err)
+	}
+
+	entity, err := a.FindByUsername(r.Context(), account.Username)
+	if err != nil {
+		httperror.InternalServerError(w, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(account); err != nil {
+	if err := json.NewEncoder(w).Encode(entity); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}

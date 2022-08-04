@@ -46,7 +46,7 @@ func (r *account) CreateNewAccount(ctx context.Context, entity object.Account) e
 		return err
 	}
 
-	debugTable(ctx, r)
+	// debugTable(ctx, r)
 
 	return nil
 }

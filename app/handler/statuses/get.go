@@ -16,19 +16,22 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(statusID)
 	s := h.app.Dao.Status()
 
-	statusID_int64, _ := strconv.ParseInt(statusID, 10, 64)
+	statusID_int64, err := strconv.ParseInt(statusID, 10, 64)
+	if err != nil {
+		httperror.BadRequest(w, err)
+	}
 
-	entity, err := s.FindByPostID(r.Context(), statusID_int64)
+	entity, err := s.FindByID(r.Context(), statusID_int64)
 
 	if err != nil {
-		panic(err)
+		httperror.BadRequest(w, err)
 	}
 
 	a := h.app.Dao.Account() // domain/repository の取得
 	account, err := a.FindByID(r.Context(), entity.AccountID)
 
 	if err != nil {
-		panic(err)
+		httperror.InternalServerError(w, err)
 	}
 
 	res := Res{}

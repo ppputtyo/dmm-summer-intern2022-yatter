@@ -50,12 +50,12 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	s := h.app.Dao.Status() // domain/repository の取得
 	err := s.PostStatus(r.Context(), status)
 	if err != nil {
-		panic("Must Implement Account Registration")
+		httperror.InternalServerError(w, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
-	status, err = s.FindByPostID(r.Context(), status.ID)
+	status, err = s.FindByID(r.Context(), status.ID)
 	if err != nil {
 		panic(err)
 	}

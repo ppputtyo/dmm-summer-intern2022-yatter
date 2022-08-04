@@ -18,7 +18,7 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	entity, err := a.FindByUsername(r.Context(), username)
 
 	if err != nil {
-		panic("not found")
+		httperror.BadRequest(w, err)
 	}
 
 	if err := json.NewEncoder(w).Encode(entity); err != nil {
