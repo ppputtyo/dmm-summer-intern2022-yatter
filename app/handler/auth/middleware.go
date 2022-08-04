@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,7 +35,7 @@ func Middleware(app *app.App) func(http.Handler) http.Handler {
 
 			username := pair[1]
 			if account, err := app.Dao.Account().FindByUsername(ctx, username); err != nil {
-				httperror.InternalServerError(w, err)
+				httperror.BadRequest(w, fmt.Errorf("failed to find account: %w", err))
 				return
 			} else if account == nil {
 				httperror.Error(w, http.StatusUnauthorized)

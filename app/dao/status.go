@@ -108,3 +108,12 @@ func (s *status) GetPublicTimelines(ctx context.Context, q object.Query) ([]obje
 	return a, nil
 
 }
+
+func (s *status) DeleteStatus(ctx context.Context, statusID int64) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM status WHERE id = ?", statusID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
