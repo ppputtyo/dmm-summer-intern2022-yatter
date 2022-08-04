@@ -65,3 +65,18 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 
 	return entity, nil
 }
+
+// FindByID : IDからユーザを取得
+func (r *account) FindByID(ctx context.Context, ID int64) (*object.Account, error) {
+	entity := new(object.Account)
+	err := r.db.QueryRowxContext(ctx, "select * from account where id = ?", ID).StructScan(entity)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return entity, nil
+}

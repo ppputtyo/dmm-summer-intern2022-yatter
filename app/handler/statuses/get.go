@@ -24,7 +24,20 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if err := json.NewEncoder(w).Encode(entity); err != nil {
+	a := h.app.Dao.Account() // domain/repository の取得
+	account, err := a.FindByID(r.Context(), entity.AccountID)
+
+	if err != nil {
+		panic(err)
+	}
+
+	res := Res{}
+	res.ID = entity.ID
+	res.Account = account
+	res.Content = entity.Content
+	res.CreateAt = entity.CreateAt
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
 		httperror.InternalServerError(w, err)
 	}
 }

@@ -12,4 +12,5 @@ type Account interface {
 	// TODO: Add Other APIs
 	// アカウントを新規作成
 	CreateNewAccount(ctx context.Context, account object.Account) error
+	FindByID(ctx context.Context, ID int64) (*object.Account, error)
 }

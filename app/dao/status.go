@@ -52,12 +52,12 @@ func (s *status) PostStatus(ctx context.Context, entity *object.Status) error {
 
 func (s *status) FindByPostID(ctx context.Context, id int64) (*object.Status, error) {
 	var a object.Status
-	err := s.db.QueryRow("SELECT id, account_id, content FROM status WHERE id = ?", id).Scan(&a.ID, &a.AccountID, &a.Content)
+	err := s.db.QueryRow("SELECT id, account_id, content, create_at FROM status WHERE id = ?", id).Scan(&a.ID, &a.AccountID, &a.Content, &a.CreateAt)
 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(a.ID, a.AccountID, a.Content)
+	// fmt.Println(a.ID, a.AccountID, a.Content)
 
 	return &a, nil
 }
