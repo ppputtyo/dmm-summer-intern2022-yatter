@@ -45,7 +45,7 @@ func (d *dao) Status() repository.Status {
 
 func (d *dao) InitAll() error {
 	if err := d.exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
-		return fmt.Errorf("Can't disable FOREIGN_KEY_CHECKS: %w", err)
+		return fmt.Errorf("can't disable FOREIGN_KEY_CHECKS: %w", err)
 	}
 
 	defer func() {
@@ -57,7 +57,7 @@ func (d *dao) InitAll() error {
 
 	for _, table := range []string{"account", "status"} {
 		if err := d.exec("TRUNCATE TABLE " + table); err != nil {
-			return fmt.Errorf("Can't truncate table "+table+": %w", err)
+			return fmt.Errorf("can't truncate table "+table+": %w", err)
 		}
 	}
 
