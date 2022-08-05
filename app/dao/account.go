@@ -57,6 +57,9 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 		return nil, fmt.Errorf("%w", err)
 	}
 
+	entity.FollowersCount = r.GetFollowersCount(ctx, entity.ID)
+	entity.FollowingCount = r.GetFollowingCount(ctx, entity.ID)
+
 	return entity, nil
 }
 
@@ -67,8 +70,33 @@ func (r *account) FindByID(ctx context.Context, ID int64) (*object.Account, erro
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
+	entity.FollowersCount = r.GetFollowersCount(ctx, ID)
+	entity.FollowingCount = r.GetFollowingCount(ctx, ID)
 
 	return entity, nil
+}
+
+func (r *account) GetFollowersCount(ctx context.Context, ID int64) int64 {
+	query := object.FollowersQuery{
+		MaxID:   1000000,
+		SinceID: -1,
+		Limit:   1000000,
+	}
+	var count int64
+
+	r.db.QueryRowxContext(
+		ctx,
+		"select count(follower_id) from relation where followee_id = ? AND follower_id < ? AND follower_id > ? LIMIT ?",
+		ID, query.MaxID, query.SinceID, query.Limit).Scan(&count)
+
+	return count
+}
+
+func (r *account) GetFollowingCount(ctx context.Context, ID int64) int64 {
+	var count int64
+	r.db.QueryRowxContext(ctx, "select count(followee_id) from relation where follower_id = ? LIMIT ?", ID, 1000000).Scan(&count)
+
+	return count
 }
 
 func debugRelation(ctx context.Context, r *account) {

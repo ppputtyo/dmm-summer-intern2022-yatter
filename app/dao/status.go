@@ -61,7 +61,7 @@ func (s *status) FindByID(ctx context.Context, id int64) (*object.Status, error)
 	return entity, nil
 }
 
-func (s *status) GetPublicTimelines(ctx context.Context, q object.Query) ([]object.Status, error) {
+func (s *status) GetPublicTimelines(ctx context.Context, q object.GetTimelineQuery) ([]object.Status, error) {
 	rows, err := s.db.QueryContext(
 		ctx,
 		"SELECT id, account_id, content, create_at FROM status WHERE id > ? AND id < ? LIMIT ? ",
@@ -84,6 +84,45 @@ func (s *status) GetPublicTimelines(ctx context.Context, q object.Query) ([]obje
 
 	return a, nil
 
+}
+
+func (s *status) GetHomeTimelines(ctx context.Context, userID int64, q object.GetTimelineQuery, following []int64) ([]object.Status, error) {
+	if len(following) == 0 {
+		return nil, nil
+	}
+
+	query := `
+	SELECT id, account_id, content, create_at
+	FROM status
+	WHERE id > ? AND id < ? AND account_id IN (?)
+	LIMIT ?
+	`
+	query, params, err := sqlx.In(query, q.SinceID, q.MaxID, following, q.Limit)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(query)
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		params...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	a := make([]object.Status, 0)
+
+	for rows.Next() {
+		var tmp object.Status
+		rows.Scan(&tmp.ID, &tmp.AccountID, &tmp.Content, &tmp.CreateAt)
+		a = append(a, tmp)
+	}
+
+	return a, nil
 }
 
 func (s *status) DeleteStatus(ctx context.Context, statusID int64) error {

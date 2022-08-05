@@ -2,20 +2,15 @@ package timelines
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"yatter-backend-go/app/domain/object"
+	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 )
 
-type Res struct {
-	ID       int64           `json:"id"`
-	Account  *object.Account `json:"account"`
-	Content  string          `json:"content"`
-	CreateAt object.DateTime `json:"create_at"`
-}
-
-func (h *handler) GetPublic(w http.ResponseWriter, r *http.Request) {
+func (h *handler) GetHome(w http.ResponseWriter, r *http.Request) {
 	q := object.GetTimelineQuery{}
 
 	q.OnlyMedia = r.URL.Query().Get("only_media")
@@ -60,8 +55,19 @@ func (h *handler) GetPublic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := h.app.Dao.Status()
+	myID := auth.AccountOf(r).ID
 
-	entity, err := s.GetPublicTimelines(r.Context(), q)
+	a := h.app.Dao.Account()
+	following, _ := a.GetFollowing(r.Context(), myID, 1000000)
+
+	userID_following := make([]int64, 0)
+	for _, v := range following {
+		tmp, _ := a.FindByUsername(r.Context(), v.Username)
+		userID_following = append(userID_following, tmp.ID)
+	}
+	fmt.Println(userID_following)
+
+	entity, err := s.GetHomeTimelines(r.Context(), myID, q, userID_following)
 
 	if err != nil {
 		httperror.InternalServerError(w, err)
@@ -69,8 +75,6 @@ func (h *handler) GetPublic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := make([]Res, 0)
-
-	a := h.app.Dao.Account() // domain/repository の取得
 
 	for _, e := range entity {
 		account, err := a.FindByID(r.Context(), e.AccountID)

@@ -10,7 +10,7 @@ type (
 		db *sqlx.DB
 	}
 
-	Query struct {
+	GetTimelineQuery struct {
 		OnlyMedia string
 		MaxID     int
 		SinceID   int
