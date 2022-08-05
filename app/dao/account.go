@@ -78,7 +78,7 @@ func (r *account) FindByID(ctx context.Context, ID int64) (*object.Account, erro
 	entity := new(object.Account)
 	err := r.db.QueryRowxContext(
 		ctx,
-		"select * from account where id = ?",
+		"SELECT * FROM account WHERE id = ?",
 		ID,
 	).StructScan(entity)
 	if err != nil {
@@ -172,8 +172,9 @@ func (r *account) GetRelation(ctx context.Context, myID, targetID int64) (*objec
 		ctx,
 		`SELECT *
 		FROM relation
-		WHERE follower_id = ? AND followee_id = ?`,
-		myID, targetID)
+		WHERE (follower_id, followee_id) = (?, ?)`,
+		myID, targetID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -187,8 +188,9 @@ func (r *account) GetRelation(ctx context.Context, myID, targetID int64) (*objec
 		ctx,
 		`SELECT *
 		FROM relation
-		WHERE follower_id = ? AND followee_id = ?`,
-		targetID, myID)
+		WHERE (follower_id, followee_id) = (?, ?)`,
+		targetID, myID,
+	)
 
 	if err != nil {
 		return nil, err
@@ -223,8 +225,8 @@ func (r *account) Follow(ctx context.Context, myID, targetID int64) error {
 func (r *account) Unfollow(ctx context.Context, myID, targetID int64) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		`DELETE FROM relation 
-		WHERE follower_id = ? AND followee_id = ?`,
+		`DELETE FROM relation
+		WHERE (follower_id, followee_id) = (?, ?)`,
 		myID, targetID,
 	)
 

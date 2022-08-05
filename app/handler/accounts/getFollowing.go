@@ -25,18 +25,15 @@ func (h *handler) GetFollowing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var limit int
-	if limit_str == "" {
-		limit = DEFAULT_LIMIT
-	} else {
+	limit := DEFAULT_LIMIT
+	if limit_str != "" {
 		limit, err = strconv.Atoi(limit_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 		}
-	}
-
-	if limit > MAX_LIMIT {
-		limit = MAX_LIMIT
+		if limit > MAX_LIMIT {
+			limit = MAX_LIMIT
+		}
 	}
 
 	res, err := a.GetFollowing(r.Context(), entity.ID, limit)

@@ -105,10 +105,12 @@ func (s *status) GetHomeTimelines(ctx context.Context, userID int64, q object.Ge
 	WHERE id > ? AND id < ? AND account_id IN (?)
 	LIMIT ?
 	`
+
 	query, params, err := sqlx.In(query, q.SinceID, q.MaxID, following, q.Limit)
 	if err != nil {
 		return nil, err
 	}
+
 	rows, err := s.db.QueryxContext(
 		ctx,
 		query,
@@ -132,7 +134,11 @@ func (s *status) GetHomeTimelines(ctx context.Context, userID int64, q object.Ge
 }
 
 func (s *status) DeleteStatus(ctx context.Context, statusID int64) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM status WHERE id = ?", statusID)
+	_, err := s.db.ExecContext(
+		ctx,
+		"DELETE FROM status WHERE id = ?",
+		statusID,
+	)
 	if err != nil {
 		return err
 	}
