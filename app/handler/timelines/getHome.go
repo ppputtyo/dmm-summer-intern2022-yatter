@@ -2,7 +2,6 @@ package timelines
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"yatter-backend-go/app/domain/object"
@@ -11,71 +10,76 @@ import (
 )
 
 func (h *handler) GetHome(w http.ResponseWriter, r *http.Request) {
-	q := object.GetTimelineQuery{}
+	const INF = 10000000
+	const DEFAULT_LIMIT = 40
+	const MAX_LIMIT = 80
 
-	q.OnlyMedia = r.URL.Query().Get("only_media")
+	query := object.GetTimelineQuery{
+		OnlyMedia: r.URL.Query().Get("only_media"),
+		MaxID:     INF,
+		SinceID:   -1,
+		Limit:     DEFAULT_LIMIT,
+	}
+
 	maxID_str := r.URL.Query().Get("max_id")
 	sinceID_str := r.URL.Query().Get("since_id")
 	limit_str := r.URL.Query().Get("limit")
 
-	if maxID_str == "" {
-		q.MaxID = 1000000
-	} else {
+	if maxID_str != "" {
 		res, err := strconv.Atoi(maxID_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 			return
 		}
-		q.MaxID = res
+		query.MaxID = res
 	}
 
-	if sinceID_str == "" {
-		q.SinceID = -1
-	} else {
+	if sinceID_str != "" {
 		res, err := strconv.Atoi(sinceID_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 			return
 		}
-		q.SinceID = res
+		query.SinceID = res
 	}
 
-	if limit_str == "" {
-		q.Limit = 40
-	} else {
+	if limit_str != "" {
 		res, err := strconv.Atoi(limit_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 			return
 		}
-		if res > 80 {
-			res = 80
+		if res > MAX_LIMIT {
+			res = MAX_LIMIT
 		}
-		q.Limit = res
+		query.Limit = res
 	}
 
-	s := h.app.Dao.Status()
 	myID := auth.AccountOf(r).ID
 
 	a := h.app.Dao.Account()
-	following, _ := a.GetFollowing(r.Context(), myID, 1000000)
+
+	following, err := a.GetFollowing(r.Context(), myID, INF)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 
 	userID_following := make([]int64, 0)
 	for _, v := range following {
 		tmp, _ := a.FindByUsername(r.Context(), v.Username)
 		userID_following = append(userID_following, tmp.ID)
 	}
-	fmt.Println(userID_following)
 
-	entity, err := s.GetHomeTimelines(r.Context(), myID, q, userID_following)
+	s := h.app.Dao.Status()
+	entity, err := s.GetHomeTimelines(r.Context(), myID, query, userID_following)
 
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	res := make([]Res, 0)
-
+	timeline := make([]Res, 0)
 	for _, e := range entity {
 		account, err := a.FindByID(r.Context(), e.AccountID)
 
@@ -83,6 +87,7 @@ func (h *handler) GetHome(w http.ResponseWriter, r *http.Request) {
 			httperror.InternalServerError(w, err)
 			return
 		}
+
 		tmp := Res{
 			ID:       e.ID,
 			Account:  account,
@@ -90,10 +95,10 @@ func (h *handler) GetHome(w http.ResponseWriter, r *http.Request) {
 			CreateAt: e.CreateAt,
 		}
 
-		res = append(res, tmp)
+		timeline = append(timeline, tmp)
 	}
 
-	if err := json.NewEncoder(w).Encode(res); err != nil {
+	if err := json.NewEncoder(w).Encode(timeline); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}

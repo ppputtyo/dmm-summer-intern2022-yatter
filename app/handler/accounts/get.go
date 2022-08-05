@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"yatter-backend-go/app/handler/httperror"
 
@@ -11,7 +10,6 @@ import (
 
 func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
-	fmt.Println(username)
 
 	a := h.app.Dao.Account()
 

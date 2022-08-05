@@ -22,7 +22,10 @@ func NewAccount(db *sqlx.DB) repository.Account {
 }
 
 func debugTable(ctx context.Context, r *account) {
-	rows, _ := r.db.QueryContext(ctx, "SELECT id, username, password_hash FROM ACCOUNT")
+	rows, _ := r.db.QueryContext(
+		ctx,
+		"SELECT id, username, password_hash FROM ACCOUNT",
+	)
 	defer rows.Close()
 
 	var a object.Account
@@ -44,21 +47,28 @@ func (r *account) CreateNewAccount(ctx context.Context, entity object.Account) e
 		return err
 	}
 
-	// debugTable(ctx, r)
-
 	return nil
 }
 
 // FindByUsername : ユーザ名からユーザを取得
 func (r *account) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
 	entity := new(object.Account)
-	err := r.db.QueryRowxContext(ctx, "select * from account where username = ?", username).StructScan(entity)
+	err := r.db.QueryRowxContext(
+		ctx,
+		"SELECT * FROM account WHERE username = ?",
+		username,
+	).StructScan(entity)
+
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return nil, err
 	}
 
-	entity.FollowersCount = r.GetFollowersCount(ctx, entity.ID)
-	entity.FollowingCount = r.GetFollowingCount(ctx, entity.ID)
+	if entity.FollowersCount, err = r.GetFollowersCount(ctx, entity.ID); err != nil {
+		return nil, err
+	}
+	if entity.FollowingCount, err = r.GetFollowingCount(ctx, entity.ID); err != nil {
+		return nil, err
+	}
 
 	return entity, nil
 }
@@ -66,41 +76,74 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 // FindByID : IDからユーザを取得
 func (r *account) FindByID(ctx context.Context, ID int64) (*object.Account, error) {
 	entity := new(object.Account)
-	err := r.db.QueryRowxContext(ctx, "select * from account where id = ?", ID).StructScan(entity)
+	err := r.db.QueryRowxContext(
+		ctx,
+		"select * from account where id = ?",
+		ID,
+	).StructScan(entity)
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return nil, err
 	}
-	entity.FollowersCount = r.GetFollowersCount(ctx, ID)
-	entity.FollowingCount = r.GetFollowingCount(ctx, ID)
+
+	if entity.FollowersCount, err = r.GetFollowersCount(ctx, ID); err != nil {
+		return nil, err
+	}
+
+	if entity.FollowingCount, err = r.GetFollowingCount(ctx, ID); err != nil {
+		return nil, err
+	}
 
 	return entity, nil
 }
 
-func (r *account) GetFollowersCount(ctx context.Context, ID int64) int64 {
+func (r *account) GetFollowersCount(ctx context.Context, ID int64) (int64, error) {
+	const INF = 10000000
 	query := object.FollowersQuery{
-		MaxID:   1000000,
+		MaxID:   INF,
 		SinceID: -1,
-		Limit:   1000000,
+		Limit:   INF,
 	}
-	var count int64
 
-	r.db.QueryRowxContext(
+	var count int64
+	err := r.db.QueryRowxContext(
 		ctx,
-		"select count(follower_id) from relation where followee_id = ? AND follower_id < ? AND follower_id > ? LIMIT ?",
-		ID, query.MaxID, query.SinceID, query.Limit).Scan(&count)
+		`SELECT count(follower_id)
+		FROM relation
+		WHERE followee_id = ? AND follower_id < ? AND follower_id > ?
+		LIMIT ?`,
+		ID, query.MaxID, query.SinceID, query.Limit,
+	).Scan(&count)
 
-	return count
+	if err != nil {
+		return -1, err
+	}
+
+	return count, nil
 }
-
-func (r *account) GetFollowingCount(ctx context.Context, ID int64) int64 {
+func (r *account) GetFollowingCount(ctx context.Context, ID int64) (int64, error) {
+	const INF = 10000000
 	var count int64
-	r.db.QueryRowxContext(ctx, "select count(followee_id) from relation where follower_id = ? LIMIT ?", ID, 1000000).Scan(&count)
+	err := r.db.QueryRowxContext(
+		ctx,
+		`SELECT count(followee_id)
+		FROM relation
+		WHERE follower_id = ?
+		LIMIT ?`,
+		ID, INF,
+	).Scan(&count)
 
-	return count
+	if err != nil {
+		return -1, err
+	}
+
+	return count, nil
 }
 
 func debugRelation(ctx context.Context, r *account) {
-	rows, _ := r.db.QueryContext(ctx, "SELECT * FROM relation")
+	rows, _ := r.db.QueryContext(
+		ctx,
+		"SELECT * FROM relation",
+	)
 	defer rows.Close()
 
 	for rows.Next() {
@@ -117,27 +160,41 @@ func debugRelation(ctx context.Context, r *account) {
 }
 
 func (r *account) GetRelation(ctx context.Context, myID, targetID int64) (*object.Relation, error) {
-	relation := new(object.Relation)
-	relation.ID = targetID
-	relation.Following = false
-	relation.FollowedBy = false
+	relation := &object.Relation{
+		ID:         targetID,
+		Following:  false,
+		FollowedBy: false,
+	}
 
 	debugRelation(ctx, r)
 
-	rows, err := r.db.QueryContext(ctx, "select * from relation where follower_id = ? AND followee_id = ?", myID, targetID)
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT *
+		FROM relation
+		WHERE follower_id = ? AND followee_id = ?`,
+		myID, targetID)
 	if err != nil {
 		return nil, err
 	}
+
+	// 対象のrelationが存在しない場合
 	if rows.Next() {
 		relation.Following = true
 	}
 
-	rows, err = r.db.QueryContext(ctx, "select * from relation where follower_id = ? AND followee_id = ?", targetID, myID)
+	rows, err = r.db.QueryContext(
+		ctx,
+		`SELECT *
+		FROM relation
+		WHERE follower_id = ? AND followee_id = ?`,
+		targetID, myID)
 
 	if err != nil {
 		return nil, err
 	}
 
+	// 対象のrelationが存在しない場合
 	if rows.Next() {
 		relation.FollowedBy = true
 	}
@@ -166,7 +223,8 @@ func (r *account) Follow(ctx context.Context, myID, targetID int64) error {
 func (r *account) Unfollow(ctx context.Context, myID, targetID int64) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		"DELETE FROM relation WHERE follower_id = ? AND followee_id = ?",
+		`DELETE FROM relation 
+		WHERE follower_id = ? AND followee_id = ?`,
 		myID, targetID,
 	)
 
@@ -178,11 +236,20 @@ func (r *account) Unfollow(ctx context.Context, myID, targetID int64) error {
 }
 
 func (r *account) GetFollowing(ctx context.Context, ID int64, limit int) ([]object.Account, error) {
-	res := make([]object.Account, 0)
+	following := make([]object.Account, 0)
 
-	rows, err := r.db.QueryContext(ctx, "select followee_id from relation where follower_id = ? LIMIT ?", ID, limit)
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT followee_id
+		FROM relation
+		WHERE follower_id = ?
+		LIMIT ?`,
+		ID, limit,
+	)
 	if err != nil {
 		return nil, err
+	} else {
+		defer rows.Close()
 	}
 
 	for rows.Next() {
@@ -193,23 +260,30 @@ func (r *account) GetFollowing(ctx context.Context, ID int64, limit int) ([]obje
 		if err != nil {
 			continue
 		}
-		res = append(res, *entity)
+		following = append(following, *entity)
 	}
 
 	debugRelation(ctx, r)
 
-	return res, nil
+	return following, nil
 }
 
 func (r *account) GetFollowers(ctx context.Context, ID int64, query object.FollowersQuery) ([]object.Account, error) {
-	res := make([]object.Account, 0)
+	followers := make([]object.Account, 0)
 
 	rows, err := r.db.QueryContext(
 		ctx,
-		"select follower_id from relation where followee_id = ? AND follower_id < ? AND follower_id > ? LIMIT ?",
-		ID, query.MaxID, query.SinceID, query.Limit)
+		`SELECT follower_id
+		FROM relation
+		WHERE followee_id = ? AND follower_id < ? AND follower_id > ?
+		LIMIT ?`,
+		ID, query.MaxID, query.SinceID, query.Limit,
+	)
+
 	if err != nil {
 		return nil, err
+	} else {
+		defer rows.Close()
 	}
 
 	for rows.Next() {
@@ -220,10 +294,10 @@ func (r *account) GetFollowers(ctx context.Context, ID int64, query object.Follo
 		if err != nil {
 			continue
 		}
-		res = append(res, *entity)
+		followers = append(followers, *entity)
 	}
 
 	debugRelation(ctx, r)
 
-	return res, nil
+	return followers, nil
 }

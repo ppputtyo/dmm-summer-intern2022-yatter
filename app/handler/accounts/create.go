@@ -16,8 +16,6 @@ type AddRequest struct {
 
 // Handle request for `POST /v1/accounts`
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
-	// ctx := r.Context()
-
 	var req AddRequest
 
 	// json受け取る

@@ -10,8 +10,12 @@ import (
 )
 
 func (h *handler) GetFollowing(w http.ResponseWriter, r *http.Request) {
+	const DEFAULT_LIMIT = 40
+	const MAX_LIMIT = 80
+
 	username := chi.URLParam(r, "username")
-	limit := r.URL.Query().Get("limit")
+	limit_str := r.URL.Query().Get("limit")
+
 	a := h.app.Dao.Account()
 
 	entity, err := a.FindByUsername(r.Context(), username)
@@ -21,21 +25,21 @@ func (h *handler) GetFollowing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var l int
-	if limit == "" {
-		l = 40
+	var limit int
+	if limit_str == "" {
+		limit = DEFAULT_LIMIT
 	} else {
-		l, err = strconv.Atoi(limit)
+		limit, err = strconv.Atoi(limit_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 		}
 	}
 
-	if l > 80 {
-		l = 80
+	if limit > MAX_LIMIT {
+		limit = MAX_LIMIT
 	}
 
-	res, err := a.GetFollowing(r.Context(), entity.ID, l)
+	res, err := a.GetFollowing(r.Context(), entity.ID, limit)
 
 	if err != nil {
 		httperror.InternalServerError(w, err)

@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
@@ -12,7 +11,7 @@ import (
 
 func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	targetUsername := chi.URLParam(r, "username")
-	fmt.Println(targetUsername)
+
 	a := h.app.Dao.Account()
 
 	entity, err := a.FindByUsername(r.Context(), targetUsername)
@@ -25,9 +24,7 @@ func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	targetID := entity.ID
 	myID := auth.AccountOf(r).ID
 
-	err = a.Unfollow(r.Context(), myID, targetID)
-
-	if err != nil {
+	if err = a.Unfollow(r.Context(), myID, targetID); err != nil {
 		httperror.BadRequest(w, err)
 		return
 	}

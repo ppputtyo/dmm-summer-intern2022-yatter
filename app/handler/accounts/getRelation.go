@@ -9,6 +9,7 @@ import (
 
 func (h *handler) GetRelation(w http.ResponseWriter, r *http.Request) {
 	targetUsername := r.URL.Query().Get("username")
+
 	a := h.app.Dao.Account()
 
 	entity, err := a.FindByUsername(r.Context(), targetUsername)
@@ -22,6 +23,7 @@ func (h *handler) GetRelation(w http.ResponseWriter, r *http.Request) {
 	myID := auth.AccountOf(r).ID
 
 	relation, err := a.GetRelation(r.Context(), myID, targetID)
+
 	if err != nil {
 		httperror.BadRequest(w, err)
 		return

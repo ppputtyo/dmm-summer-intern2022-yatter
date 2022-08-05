@@ -16,59 +16,61 @@ type Res struct {
 }
 
 func (h *handler) GetPublic(w http.ResponseWriter, r *http.Request) {
-	q := object.GetTimelineQuery{}
+	const INF = 10000000
+	const DEFAULT_LIMIT = 40
+	const MAX_LIMIT = 80
 
-	q.OnlyMedia = r.URL.Query().Get("only_media")
+	query := object.GetTimelineQuery{
+		OnlyMedia: r.URL.Query().Get("only_media"),
+		MaxID:     INF,
+		SinceID:   -1,
+		Limit:     DEFAULT_LIMIT,
+	}
+
 	maxID_str := r.URL.Query().Get("max_id")
 	sinceID_str := r.URL.Query().Get("since_id")
 	limit_str := r.URL.Query().Get("limit")
 
-	if maxID_str == "" {
-		q.MaxID = 1000000
-	} else {
+	if maxID_str != "" {
 		res, err := strconv.Atoi(maxID_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 			return
 		}
-		q.MaxID = res
+		query.MaxID = res
 	}
 
-	if sinceID_str == "" {
-		q.SinceID = -1
-	} else {
+	if sinceID_str != "" {
 		res, err := strconv.Atoi(sinceID_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 			return
 		}
-		q.SinceID = res
+		query.SinceID = res
 	}
 
-	if limit_str == "" {
-		q.Limit = 40
-	} else {
+	if limit_str != "" {
 		res, err := strconv.Atoi(limit_str)
 		if err != nil {
 			httperror.BadRequest(w, err)
 			return
 		}
-		if res > 80 {
-			res = 80
+		if res > MAX_LIMIT {
+			res = MAX_LIMIT
 		}
-		q.Limit = res
+		query.Limit = res
 	}
 
 	s := h.app.Dao.Status()
 
-	entity, err := s.GetPublicTimelines(r.Context(), q)
+	entity, err := s.GetPublicTimelines(r.Context(), query)
 
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	res := make([]Res, 0)
+	timeline := make([]Res, 0)
 
 	a := h.app.Dao.Account() // domain/repository の取得
 
@@ -86,10 +88,10 @@ func (h *handler) GetPublic(w http.ResponseWriter, r *http.Request) {
 			CreateAt: e.CreateAt,
 		}
 
-		res = append(res, tmp)
+		timeline = append(timeline, tmp)
 	}
 
-	if err := json.NewEncoder(w).Encode(res); err != nil {
+	if err := json.NewEncoder(w).Encode(timeline); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
