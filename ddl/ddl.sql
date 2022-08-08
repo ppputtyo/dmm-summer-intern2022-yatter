@@ -19,3 +19,11 @@ CREATE TABLE `status` (
   INDEX `idx_account_id` (`account_id`),
   CONSTRAINT `fk_status_account_id` FOREIGN KEY (`account_id`) REFERENCES  `account` (`id`)
 );
+
+CREATE TABLE `relation` (
+  `follower_id` bigint(20) NOT NULL,
+  `followee_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`follower_id`, `followee_id`),
+  CONSTRAINT `fk_relation_follower_id` FOREIGN KEY (`follower_id`) REFERENCES  `account` (`id`),
+  CONSTRAINT `fk_relation_followee_id` FOREIGN KEY (`followee_id`) REFERENCES  `account` (`id`)
+);

@@ -22,6 +22,10 @@ type (
 		// The username of the account
 		PasswordHash string `json:"-" db:"password_hash"`
 
+		FollowersCount int64 `json:"followers_count" db:"followers_count"`
+
+		FollowingCount int64 `json:"following_count" db:"following_count"`
+
 		// The account's display name
 		DisplayName *string `json:"display_name,omitempty" db:"display_name"`
 
@@ -36,6 +40,18 @@ type (
 
 		// The time the account was created
 		CreateAt DateTime `json:"create_at,omitempty" db:"create_at"`
+	}
+
+	Relation struct {
+		ID         AccountID `json:"id"`
+		Following  bool      `json:"following"`
+		FollowedBy bool      `json:"followed_by"`
+	}
+
+	FollowersQuery struct {
+		MaxID   int
+		SinceID int
+		Limit   int
 	}
 )
 
